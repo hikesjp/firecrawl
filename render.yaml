@@ -49,7 +49,6 @@ services:
         fromService:
           type: web
           name: firecrawl-playwright
-          property: host
           envVarKey: RENDER_INTERNAL_URL
       - key: HOST
         value: 0.0.0.0
@@ -113,9 +112,6 @@ services:
         value: "0.8"
       - key: MAX_RAM
         value: "0.8"
-    buildCommand: cd apps/api && pnpm install --frozen-lockfile
-    startCommand: cd apps/api && pnpm run start:production
-
   # Worker service
   - type: worker
     name: firecrawl-worker
@@ -139,7 +135,6 @@ services:
         fromService:
           type: web
           name: firecrawl-playwright
-          property: host
           envVarKey: RENDER_INTERNAL_URL
       - key: FLY_PROCESS_GROUP
         value: worker
@@ -202,5 +197,3 @@ services:
         value: "0.8"
       - key: MAX_RAM
         value: "0.8"
-    buildCommand: cd apps/api && pnpm install --frozen-lockfile
-    startCommand: cd apps/api && pnpm run workers
