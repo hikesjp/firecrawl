@@ -112,14 +112,16 @@ services:
         value: "0.8"
       - key: MAX_RAM
         value: "0.8"
-  # Worker service
-  - type: worker
+
+  # Worker service (running as web service for free plan)
+  - type: web
     name: firecrawl-worker
     runtime: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: ./apps/api
+    dockerCommand: node dist/src/services/queue-worker.js
     envVars:
       - key: REDIS_URL
         fromService:
@@ -197,3 +199,5 @@ services:
         value: "0.8"
       - key: MAX_RAM
         value: "0.8"
+      - key: PORT
+        value: 3003
