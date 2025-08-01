@@ -1,0 +1,206 @@
+services:
+  # Redis instance
+  - type: keyvalue
+    name: firecrawl-redis
+    region: oregon
+    plan: free
+    ipAllowList: []
+
+  # Playwright service
+  - type: web
+    name: firecrawl-playwright
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./apps/playwright-service-ts/Dockerfile
+    dockerContext: ./apps/playwright-service-ts
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: PROXY_SERVER
+        sync: false
+      - key: PROXY_USERNAME
+        sync: false
+      - key: PROXY_PASSWORD
+        sync: false
+      - key: BLOCK_MEDIA
+        sync: false
+
+  # Main API service
+  - type: web
+    name: firecrawl-api
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: firecrawl-redis
+          property: connectionString
+      - key: REDIS_RATE_LIMIT_URL
+        fromService:
+          type: keyvalue
+          name: firecrawl-redis
+          property: connectionString
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        fromService:
+          type: web
+          name: firecrawl-playwright
+          property: host
+          envVarKey: RENDER_INTERNAL_URL
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3002
+      - key: FLY_PROCESS_GROUP
+        value: app
+      - key: ENV
+        value: production
+      - key: USE_DB_AUTHENTICATION
+        value: false
+      - key: BULL_AUTH_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false
+      - key: MODEL_NAME
+        sync: false
+      - key: MODEL_EMBEDDING_NAME
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: TEST_API_KEY
+        sync: false
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
+        sync: false
+      - key: SUPABASE_ANON_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_TOKEN
+        sync: false
+      - key: SELF_HOSTED_WEBHOOK_URL
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: SEARCHAPI_API_KEY
+        sync: false
+      - key: LOGGING_LEVEL
+        sync: false
+      - key: PROXY_SERVER
+        sync: false
+      - key: PROXY_USERNAME
+        sync: false
+      - key: PROXY_PASSWORD
+        sync: false
+      - key: SEARXNG_ENDPOINT
+        sync: false
+      - key: SEARXNG_ENGINES
+        sync: false
+      - key: SEARXNG_CATEGORIES
+        sync: false
+      - key: LLAMAPARSE_API_KEY
+        sync: false
+      - key: MAX_CPU
+        value: "0.8"
+      - key: MAX_RAM
+        value: "0.8"
+    buildCommand: cd apps/api && pnpm install --frozen-lockfile
+    startCommand: cd apps/api && pnpm run start:production
+
+  # Worker service
+  - type: worker
+    name: firecrawl-worker
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: firecrawl-redis
+          property: connectionString
+      - key: REDIS_RATE_LIMIT_URL
+        fromService:
+          type: keyvalue
+          name: firecrawl-redis
+          property: connectionString
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        fromService:
+          type: web
+          name: firecrawl-playwright
+          property: host
+          envVarKey: RENDER_INTERNAL_URL
+      - key: FLY_PROCESS_GROUP
+        value: worker
+      - key: ENV
+        value: production
+      - key: USE_DB_AUTHENTICATION
+        value: false
+      - key: BULL_AUTH_KEY
+        fromService:
+          type: web
+          name: firecrawl-api
+          envVarKey: BULL_AUTH_KEY
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false
+      - key: MODEL_NAME
+        sync: false
+      - key: MODEL_EMBEDDING_NAME
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: TEST_API_KEY
+        sync: false
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
+        sync: false
+      - key: SUPABASE_ANON_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_TOKEN
+        sync: false
+      - key: SELF_HOSTED_WEBHOOK_URL
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: SEARCHAPI_API_KEY
+        sync: false
+      - key: LOGGING_LEVEL
+        sync: false
+      - key: PROXY_SERVER
+        sync: false
+      - key: PROXY_USERNAME
+        sync: false
+      - key: PROXY_PASSWORD
+        sync: false
+      - key: SEARXNG_ENDPOINT
+        sync: false
+      - key: SEARXNG_ENGINES
+        sync: false
+      - key: SEARXNG_CATEGORIES
+        sync: false
+      - key: LLAMAPARSE_API_KEY
+        sync: false
+      - key: MAX_CPU
+        value: "0.8"
+      - key: MAX_RAM
+        value: "0.8"
+    buildCommand: cd apps/api && pnpm install --frozen-lockfile
+    startCommand: cd apps/api && pnpm run workers
